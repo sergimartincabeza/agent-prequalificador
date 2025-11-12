@@ -98,25 +98,26 @@ if submit:
     ))
     st.plotly_chart(fig)
 
-    # --- Generar PDF con fpdf2 ---
+    # --- Generar PDF con soporte Unicode ---
     class PDF(FPDF):
         def header(self):
             try:
                 self.image(logo_path, 10, 8, 33)
             except:
                 pass
-            self.set_font("Arial", "B", 16)
+            self.set_font("DejaVu", "", 16)
             self.set_text_color(25, 134, 170)
             self.cell(0, 10, "Informe Prequalificació", ln=True, align="C")
 
         def footer(self):
             self.set_y(-15)
-            self.set_font("Arial", "I", 8)
+            self.set_font("DejaVu", "", 8)
             self.cell(0, 10, "Agent Prequalificador - Contacte: info@empresa.com", align="C")
 
     pdf = PDF()
+    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+    pdf.set_font('DejaVu', '', 12)
     pdf.add_page()
-    pdf.set_font("Arial", "", 12)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, f"Nom del client: {nom}", ln=True)
     pdf.cell(0, 10, f"Import a finançar: {import_financiar:,.2f} €", ln=True)
