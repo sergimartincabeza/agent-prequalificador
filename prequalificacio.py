@@ -66,7 +66,7 @@ def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
     text = f"Informe de Prequalificació"
 
 Nom del client: {nom_client}
-Capital total disponible (incloent estalvis): {capital} €
+Capital total disponible (incloent estalvis): {capital} euros
 Preu màxim habitatge: {preu} €
 Quota màxima assumible: {quota} €"
     page.insert_text((50, 200), text, fontsize=14, color=(0, 0, 0))
