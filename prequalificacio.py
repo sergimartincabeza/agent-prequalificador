@@ -11,18 +11,16 @@ st.set_page_config(page_title="Agent Prequalificador", page_icon="🏠", layout=
 # --- Colores corporativos ---
 CORPORATE_COLOR = "#1986aa"
 
-# --- Header con logo y título ---
+# --- Mostrar logo y título ---
 logo_path = "logo.png"
-if os.path.exists(logo_path):
-    st.markdown(f"""
-    <div style='display:flex; align-items:center; justify-content:center;'>
-        <img src='{logo_path}' style='height:60px; margin-right:15px;'>
-        <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"<h1 style='color:{CORPORATE_COLOR}; text-align:center;'>Agent Prequalificador</h1>", unsafe_allow_html=True)
-    st.warning("⚠ Logo no disponible. Puja el fitxer 'logo.png'.")
+col1, col2 = st.columns([1, 4])
+with col1:
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=80)
+    else:
+        st.warning("⚠ Logo no disponible. Puja el fitxer 'logo.png'.")
+with col2:
+    st.markdown(f"<h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>", unsafe_allow_html=True)
 
 st.write("Introdueix les dades del client per calcular el capital màxim d'hipoteca i el preu màxim de l'habitatge.")
 
@@ -36,10 +34,9 @@ with st.form("prequal_form"):
     submit = st.form_submit_button("Calcular")
 
 if submit:
-    # --- Cálculo del precio máximo ---
+    # --- Cálculo ---
     tipus_mensual = (tipus_interes / 100) / 12
     n_quotes = anys * 12
-
     quota_max = ingressos * 0.35
     import_max = quota_max * (1 - (1 + tipus_mensual) ** (-n_quotes)) / tipus_mensual
     preu_maxim = import_max + estalvis
@@ -51,7 +48,7 @@ if submit:
     st.write(f"**Capital màxim hipoteca:** {import_max:,.2f} €")
     st.write(f"**Preu màxim habitatge:** {preu_maxim:,.2f} €")
 
-    # --- Gauge atractivo con Plotly ---
+    # --- Gauge ---
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
         value=preu_maxim,
@@ -68,7 +65,11 @@ if submit:
     ))
     st.plotly_chart(fig)
 
-    # --- Generar PDF personalizado con PyMuPDF ---
+    # --- Exportar gauge como imagen PNG ---
+    gauge_img = "gauge.png"
+    fig.write_image(gauge_img)
+
+    # --- Generar PDF con PyMuPDF incluyendo el gauge ---
     pdf_file = "prequalificacio.pdf"
     doc = fitz.open()
     page = doc.new_page()
@@ -78,8 +79,8 @@ if submit:
 
     # Logo si existe
     if os.path.exists(logo_path):
-        rect = fitz.Rect(400, 20, 500, 100)
-        page.insert_image(rect, filename=logo_path)
+        rect_logo = fitz.Rect(400, 20, 500, 100)
+        page.insert_image(rect_logo, filename=logo_path)
 
     # Datos
     y = 120
@@ -90,6 +91,11 @@ if submit:
     page.insert_text((50, y), f"Capital màxim hipoteca: {import_max:,.2f} €", fontsize=14)
     y += 20
     page.insert_text((50, y), f"Preu màxim habitatge: {preu_maxim:,.2f} €", fontsize=14)
+
+    # Insertar gauge en el PDF
+    if os.path.exists(gauge_img):
+        rect_gauge = fitz.Rect(50, y + 40, 350, y + 240)
+        page.insert_image(rect_gauge, filename=gauge_img)
 
     # Guardar PDF
     doc.save(pdf_file)
