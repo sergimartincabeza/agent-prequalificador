@@ -54,45 +54,49 @@ header_html = f"""
 """
 st.markdown(header_html, unsafe_allow_html=True)
 
-st.write("Completa el formulari per calcular la teva prequalificació hipotecària.")
+st.write("Completa el formulari per calcular el preu màxim de l'habitatge que pots comprar.")
 
 # --- Formulario ---
 with st.form("prequal_form"):
     nom = st.text_input("Nom del client")
     ingressos = st.number_input("Ingressos mensuals (€)", min_value=0.0, step=100.0)
     estalvis = st.number_input("Estalvis disponibles (€)", min_value=0.0, step=100.0)
-    preu_habitatge = st.number_input("Preu habitatge desitjat (€)", min_value=0.0, step=1000.0)
     tipus_interes = st.number_input("Tipus d'interès (%)", min_value=0.0, step=0.1, value=3.0)
     anys = st.number_input("Termini (anys)", min_value=1, step=1, value=30)
     submit = st.form_submit_button("Calcular")
 
 if submit:
-    # --- Cálculo hipotecario ---
+    # --- Cálculo del precio máximo ---
     tipus_mensual = (tipus_interes / 100) / 12
     n_quotes = anys * 12
-    import_financiar = preu_habitatge - estalvis
-    quota = import_financiar * tipus_mensual / (1 - (1 + tipus_mensual) ** (-n_quotes))
 
-    percent_financament = (import_financiar / preu_habitatge) * 100
+    # Regla del 35% de ingresos para la cuota máxima
+    quota_max = ingressos * 0.35
+
+    # Fórmula inversa para calcular el importe máximo financiable
+    import_max = quota_max * (1 - (1 + tipus_mensual) ** (-n_quotes)) / tipus_mensual
+
+    # Precio máximo = importe máximo + estalvis
+    preu_maxim = import_max + estalvis
 
     # --- Resultados ---
     st.subheader("Resultats")
     st.write(f"**Nom:** {nom}")
-    st.write(f"**Import a finançar:** {import_financiar:,.2f} €")
-    st.write(f"**Quota mensual estimada:** {quota:,.2f} €")
-    st.write(f"**Percentatge finançament:** {percent_financament:.2f}%")
+    st.write(f"**Quota màxima assumible:** {quota_max:,.2f} €")
+    st.write(f"**Import màxim a finançar:** {import_max:,.2f} €")
+    st.write(f"**Preu màxim habitatge:** {preu_maxim:,.2f} €")
 
     # --- Gauge con Plotly ---
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
-        value=percent_financament,
-        title={"text": "Finançament (%)"},
+        value=preu_maxim,
+        title={"text": "Preu màxim (€)"},
         gauge={
-            "axis": {"range": [0, 100]},
+            "axis": {"range": [0, preu_maxim * 1.2]},
             "bar": {"color": CORPORATE_COLOR},
             "steps": [
-                {"range": [0, 80], "color": "lightgreen"},
-                {"range": [80, 100], "color": "lightcoral"}
+                {"range": [0, preu_maxim * 0.8], "color": "lightgreen"},
+                {"range": [preu_maxim * 0.8, preu_maxim * 1.2], "color": "lightcoral"}
             ]
         }
     ))
@@ -120,9 +124,9 @@ if submit:
     pdf.add_page()
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, f"Nom del client: {nom}", ln=True)
-    pdf.cell(0, 10, f"Import a finançar: {import_financiar:,.2f} €", ln=True)
-    pdf.cell(0, 10, f"Quota mensual estimada: {quota:,.2f} €", ln=True)
-    pdf.cell(0, 10, f"Percentatge finançament: {percent_financament:.2f}%", ln=True)
+    pdf.cell(0, 10, f"Quota màxima assumible: {quota_max:,.2f} €", ln=True)
+    pdf.cell(0, 10, f"Import màxim a finançar: {import_max:,.2f} €", ln=True)
+    pdf.cell(0, 10, f"Preu màxim habitatge: {preu_maxim:,.2f} €", ln=True)
 
     pdf_file = "prequalificacio.pdf"
     pdf.output(pdf_file)
