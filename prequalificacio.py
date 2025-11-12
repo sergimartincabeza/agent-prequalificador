@@ -67,8 +67,8 @@ def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
 
 Nom del client: {nom_client}
 Capital total disponible (incloent estalvis): {capital} euros
-Preu màxim habitatge: {preu} €
-Quota màxima assumible: {quota} €"
+Preu màxim habitatge: {preu} euros
+Quota màxima assumible: {quota} euros"
     page.insert_text((50, 200), text, fontsize=14, color=(0, 0, 0))
 
     # Afegir gauge
@@ -85,18 +85,18 @@ Quota màxima assumible: {quota} €"
 
 # Inputs
 nom_client = st.text_input("Nom del client")
-ingressos = st.number_input("Ingressos mensuals (€)", min_value=0)
-despeses = st.number_input("Despeses mensuals (€)", min_value=0)
-estalvis = st.number_input("Estalvis previs (€)", min_value=0)
+ingressos = st.number_input("Ingressos mensuals (euros)", min_value=0)
+despeses = st.number_input("Despeses mensuals (euros)", min_value=0)
+estalvis = st.number_input("Estalvis previs (euros)", min_value=0)
 tipus_interes = st.number_input("Tipus d'interès (%)", min_value=0.0)
 anys = st.number_input("Termini (anys)", min_value=1)
 
 if st.button("Generar informe PDF"):
     capital, preu, quota_max = calcular_maxims(ingressos, despeses, tipus_interes, anys, estalvis)
     st.success(f"Nom del client: {nom_client}")
-    st.success(f"Capital total disponible (incloent estalvis): {capital} €")
-    st.success(f"Preu màxim habitatge: {preu} €")
-    st.info(f"Quota màxima assumible: {quota_max} €")
+    st.success(f"Capital total disponible (incloent estalvis): {capital} euros")
+    st.success(f"Preu màxim habitatge: {preu} euros")
+    st.info(f"Quota màxima assumible: {quota_max} euros")
 
     percentatge = min(100, round((capital / (preu if preu > 0 else 1)) * 100, 2))
     gauge_img = generar_gauge(percentatge)
