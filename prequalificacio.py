@@ -62,13 +62,19 @@ def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
     except:
         pass
 
-    # Afegir text
-    text = f"Informe de Prequalificació
+    # Afegir text amb sintaxi segura
+    text = (
+        f"Informe de Prequalificació
 
-Nom del client: {nom_client}
-Capital total disponible (incloent estalvis): {capital} EUR
-Preu màxim habitatge: {preu} EUR
-Quota màxima assumible: {quota} EUR"
+"
+        f"Nom del client: {nom_client}
+"
+        f"Capital total disponible (incloent estalvis): {capital} EUR
+"
+        f"Preu màxim habitatge: {preu} EUR
+"
+        f"Quota màxima assumible: {quota} EUR"
+    )
     page.insert_text((50, 200), text, fontsize=14, color=(0, 0, 0))
 
     # Afegir gauge
