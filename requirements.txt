@@ -1,6 +1,3 @@
 streamlit
 plotly
 PyMuPDF
-fpdf2
-pandas
-numpy
