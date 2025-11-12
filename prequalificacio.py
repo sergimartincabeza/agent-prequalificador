@@ -1,113 +1,87 @@
-
 import streamlit as st
 import plotly.graph_objects as go
-import base64
-import fitz  # PyMuPDF
-import os
+from fpdf import FPDF
 
-# --- Configuración de la página ---
-st.set_page_config(page_title="Agent Prequalificador", page_icon="🏠", layout="centered")
+# Injectar CSS per disseny corporatiu
+st.markdown("""
+    <style>
+    .main {background-color: #f9f9f9;}
+    .stButton>button {
+        background-color: #1986aa;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    .stTextInput>div>input, .stNumberInput>div>input {
+        border: 2px solid #1986aa;
+        border-radius: 6px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- Colores corporativos ---
-CORPORATE_COLOR = "#1986aa"
+# Funció per calcular quota hipotecària
+def calcular_quota(import_hipoteca, tipus_interes, anys):
+    i = tipus_interes / 12 / 100
+    n = anys * 12
+    quota = import_hipoteca * i / (1 - (1 + i) ** -n)
+    return round(quota, 2)
 
-# --- Mostrar logo y título ---
-logo_path = "logo.png"
-col1, col2 = st.columns([1, 4])
-with col1:
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=80)
-    else:
-        st.warning("⚠ Logo no disponible. Puja el fitxer 'logo.png'.")
-with col2:
-    st.markdown(f"<h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>", unsafe_allow_html=True)
-
-st.write("Introdueix les dades del client per calcular el capital màxim d'hipoteca i el preu màxim de l'habitatge.")
-
-# --- Formulario ---
-with st.form("prequal_form"):
-    nom = st.text_input("Nom del client")
-    ingressos = st.number_input("Ingressos mensuals (€)", min_value=0.0, step=100.0)
-    estalvis = st.number_input("Estalvis disponibles (€)", min_value=0.0, step=100.0)
-    tipus_interes = st.number_input("Tipus d'interès (%)", min_value=0.0, step=0.1, value=3.0)
-    anys = st.number_input("Termini (anys)", min_value=1, step=1, value=30)
-    submit = st.form_submit_button("Calcular")
-
-if submit:
-    # --- Cálculo ---
-    tipus_mensual = (tipus_interes / 100) / 12
-    n_quotes = anys * 12
-    quota_max = ingressos * 0.35
-    import_max = quota_max * (1 - (1 + tipus_mensual) ** (-n_quotes)) / tipus_mensual
-    preu_maxim = import_max + estalvis
-
-    # --- Resultados ---
-    st.subheader("Resultats")
-    st.write(f"**Nom:** {nom}")
-    st.write(f"**Quota màxima assumible:** {quota_max:,.2f} €")
-    st.write(f"**Capital màxim hipoteca:** {import_max:,.2f} €")
-    st.write(f"**Preu màxim habitatge:** {preu_maxim:,.2f} €")
-
-    # --- Gauge ---
+# Funció per generar gauge i guardar imatge
+def generar_gauge(valor, fitxer="gauge.png"):
     fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=preu_maxim,
-        title={"text": "Preu màxim (€)"},
-        delta={"reference": import_max},
-        gauge={
-            "axis": {"range": [0, preu_maxim * 1.2]},
-            "bar": {"color": CORPORATE_COLOR},
-            "steps": [
-                {"range": [0, preu_maxim * 0.8], "color": "lightgreen"},
-                {"range": [preu_maxim * 0.8, preu_maxim * 1.2], "color": "lightcoral"}
-            ]
-        }
+        mode="gauge+number",
+        value=valor,
+        title={'text': "Qualificació"},
+        gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#1986aa"}}
     ))
-    st.plotly_chart(fig)
+    fig.update_layout(paper_bgcolor="#f9f9f9")
+    fig.write_image(fitxer)
+    return fitxer
 
-    # --- Exportar gauge como imagen PNG en /tmp ---
-    gauge_img = "/tmp/gauge.png"
-    try:
-        fig.write_image(gauge_img)
-    except Exception as e:
-        st.error("No s'ha pogut generar la imatge del gauge. Comprova que 'kaleido' està instal·lat.")
-        gauge_img = None
+# Funció per crear PDF
+def crear_pdf(nom_client, import_hipoteca, quota, gauge_img):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=14)
+    pdf.set_text_color(25, 134, 170)
+    pdf.cell(200, 10, txt="Informe Prequalificació", ln=True, align="C")
+    pdf.ln(10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Nom del client: {nom_client}", ln=True)
+    pdf.cell(200, 10, txt=f"Import hipoteca: {import_hipoteca} €", ln=True)
+    pdf.cell(200, 10, txt=f"Quota mensual estimada: {quota} €", ln=True)
+    pdf.ln(10)
+    pdf.image(gauge_img, x=50, y=80, w=100)
+    fitxer_pdf = "informe.pdf"
+    pdf.output(fitxer_pdf)
+    return fitxer_pdf
 
-    # --- Generar PDF en /tmp ---
-    pdf_file = "/tmp/prequalificacio.pdf"
-    doc = fitz.open()
-    page = doc.new_page()
+# --- STREAMLIT ---
+st.title("Prequalificació Hipotecària")
+st.subheader("Disseny corporatiu amb color #1986aa")
 
-    # Título
-    page.insert_text((50, 50), "Informe Prequalificació", fontsize=20, color=(0.09, 0.52, 0.67))
+nom_client = st.text_input("Nom del client")
+import_hipoteca = st.number_input("Import hipoteca (€)", min_value=0)
+tipus_interes = st.number_input("Tipus d'interès (%)", min_value=0.0)
+anys = st.number_input("Termini (anys)", min_value=1)
 
-    # Logo si existe
-    if os.path.exists(logo_path):
-        rect_logo = fitz.Rect(400, 20, 500, 100)
-        page.insert_image(rect_logo, filename=logo_path)
+if st.button("Generar informe corporatiu"):
+    quota = calcular_quota(import_hipoteca, tipus_interes, anys)
+    st.success(f"Quota mensual estimada: {quota} €")
 
-    # Datos
-    y = 120
-    page.insert_text((50, y), f"Nom del client: {nom}", fontsize=14)
-    y += 20
-    page.insert_text((50, y), f"Quota màxima assumible: {quota_max:,.2f} €", fontsize=14)
-    y += 20
-    page.insert_text((50, y), f"Capital màxim hipoteca: {import_max:,.2f} €", fontsize=14)
-    y += 20
-    page.insert_text((50, y), f"Preu màxim habitatge: {preu_maxim:,.2f} €", fontsize=14)
+    valor_gauge = 75
+    gauge_img = generar_gauge(valor_gauge)
 
-    # Insertar gauge en el PDF si existe
-    if gauge_img and os.path.exists(gauge_img):
-        rect_gauge = fitz.Rect(50, y + 40, 350, y + 240)
-        page.insert_image(rect_gauge, filename=gauge_img)
+    fitxer_pdf = crear_pdf(nom_client, import_hipoteca, quota, gauge_img)
 
-    # Guardar PDF
-    doc.save(pdf_file)
-    doc.close()
+    with open(fitxer_pdf, "rb") as f:
+        st.download_button("Descarregar PDF corporatiu", f, file_name="informe.pdf")
 
-    # Botón para descargar PDF
-    with open(pdf_file, "rb") as f:
-        pdf_bytes = f.read()
-        b64 = base64.b64encode(pdf_bytes).decode()
-        href = f'<a href="data:application/octet-stream;base64,{b64}" download="prequalificacio.pdf">📥 Descarregar PDF</a>'
-        st.markdown(href, unsafe_allow_html=True)
+# Secció futura per gràfics comparatius
+st.markdown("""
+---
+### Gràfics comparatius (propera versió)
+Aquí afegirem gràfics per comparar diferents escenaris hipotecaris.
+""")
