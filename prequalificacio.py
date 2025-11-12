@@ -39,21 +39,18 @@ def calcular_maxims(ingressos_mensuals, despeses_mensuals, tipus_interes, anys, 
     preu_maxim = capital_total / percentatge_financament
     return round(capital_total, 2), round(preu_maxim, 2), round(capacitat_quota, 2)
 
-# Funció per generar gauge i guardar imatge sense Kaleido
-def generar_gauge(valor, fitxer="gauge.png"):
+# Funció per mostrar gauge a Streamlit
+def mostrar_gauge(valor):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=valor,
         title={'text': "Qualificació"},
         gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#1986aa"}}
     ))
-    img_bytes = fig.to_image(format="png")
-    with open(fitxer, "wb") as f:
-        f.write(img_bytes)
-    return fitxer
+    st.plotly_chart(fig)
 
-# Funció per crear PDF corporatiu amb FPDF
-def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
+# Funció per crear PDF corporatiu amb FPDF (sense imatge del gauge)
+def crear_pdf(nom_client, capital, preu, quota, logo_img="logo.png"):
     pdf = FPDF()
     pdf.add_page()
 
@@ -74,13 +71,6 @@ def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
     pdf.cell(200, 10, txt=f"Capital total disponible (incloent estalvis): {capital} EUR", ln=True)
     pdf.cell(200, 10, txt=f"Preu màxim habitatge: {preu} EUR", ln=True)
     pdf.cell(200, 10, txt=f"Quota màxima assumible: {quota} EUR", ln=True)
-    pdf.ln(10)
-
-    # Afegir gauge
-    try:
-        pdf.image(gauge_img, x=50, y=100, w=100)
-    except:
-        pass
 
     pdf_file = "informe_prequalificacio.pdf"
     pdf.output(pdf_file)
@@ -102,9 +92,9 @@ if st.button("Generar informe PDF"):
     st.info(f"Quota màxima assumible: {quota_max} EUR")
 
     percentatge = min(100, round((capital / (preu if preu > 0 else 1)) * 100, 2))
-    gauge_img = generar_gauge(percentatge)
+    mostrar_gauge(percentatge)
 
-    pdf_file = crear_pdf(nom_client, capital, preu, quota_max, gauge_img)
+    pdf_file = crear_pdf(nom_client, capital, preu, quota_max)
 
     with open(pdf_file, "rb") as f:
         st.download_button("Descarregar PDF corporatiu", f, file_name=pdf_file)
