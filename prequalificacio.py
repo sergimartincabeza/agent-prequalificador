@@ -96,7 +96,7 @@ if st.button("Calcula la capacitat hipotecària"):
     doc = fitz.open()
     page = doc.new_page()
 
-    text = f"Informe de Prequalificació
+    text = f"""Informe de Prequalificació
 
 Nom: {nom_client}
 
@@ -109,7 +109,7 @@ Termini: {anys} anys
 Resultats:
 Quota màxima: {quota:.2f} €
 Hipoteca màxima: {hipoteca:.2f} €
-Preu màxim habitatge: {preu:.2f} €"
+Preu màxim habitatge: {preu:.2f} €"""
 
     page.insert_text((50, 50), text, fontsize=12)
     doc.save(pdf_buffer)
