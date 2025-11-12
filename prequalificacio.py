@@ -39,7 +39,7 @@ def calcular_maxims(ingressos_mensuals, despeses_mensuals, tipus_interes, anys, 
     preu_maxim = capital_total / percentatge_financament
     return round(capital_total, 2), round(preu_maxim, 2), round(capacitat_quota, 2)
 
-# Funció per generar gauge i guardar imatge
+# Funció per generar gauge i guardar imatge sense Kaleido
 def generar_gauge(valor, fitxer="gauge.png"):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -47,7 +47,9 @@ def generar_gauge(valor, fitxer="gauge.png"):
         title={'text': "Qualificació"},
         gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#1986aa"}}
     ))
-    fig.write_image(fitxer)
+    img_bytes = fig.to_image(format="png")
+    with open(fitxer, "wb") as f:
+        f.write(img_bytes)
     return fitxer
 
 # Funció per crear PDF corporatiu amb FPDF
