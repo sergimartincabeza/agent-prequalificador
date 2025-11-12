@@ -1,4 +1,4 @@
-# Calculadora Hipotecària Corporativa
+# Prequalificació Hipotecària amb FPDF
 
 ## Instruccions
 1. Afegeix el teu logo com `logo.png` al mateix directori.
@@ -8,11 +8,13 @@
    ```
 3. Executa l'aplicació:
    ```bash
-   streamlit run app.py
+   streamlit run prequalificacio.py
    ```
 
 ## Funcionalitats
-- Calcula capital màxim d'hipoteca i preu màxim habitatge
-- Colors corporatius (#1986aa)
-- Logo corporatiu
-- Gauge visual
+- Camp per nom del client
+- Calcula capital total (hipoteca + estalvis) i preu màxim habitatge
+- Mostra quota màxima assumible
+- Gauge amb percentatge de qualificació
+- Generació automàtica de PDF amb logo, resultats i gauge
+- Substitució del símbol € per EUR per evitar errors

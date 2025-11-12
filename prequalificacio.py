@@ -1,6 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
-import fitz  # PyMuPDF per crear PDF
+from fpdf import FPDF
 
 # Injectar CSS corporatiu
 st.markdown("""
@@ -50,38 +50,38 @@ def generar_gauge(valor, fitxer="gauge.png"):
     fig.write_image(fitxer)
     return fitxer
 
-# Funció per crear PDF corporatiu
+# Funció per crear PDF corporatiu amb FPDF
 def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
-    doc = fitz.open()
-    page = doc.new_page()
+    pdf = FPDF()
+    pdf.add_page()
 
     # Afegir logo
     try:
-        rect_logo = fitz.Rect(50, 50, 200, 150)
-        page.insert_image(rect_logo, filename=logo_img)
+        pdf.image(logo_img, x=10, y=8, w=40)
     except:
         pass
 
-    # Afegir text amb sintaxi segura
-    text = (
-        f"Informe de Prequalificació\n\n"
-        f"Nom del client: {nom_client}\n"
-        f"Capital total disponible (incloent estalvis): {capital} EUR\n"
-        f"Preu màxim habitatge: {preu} EUR\n"
-        f"Quota màxima assumible: {quota} EUR"
-    )
-    page.insert_text((50, 200), text, fontsize=14, color=(0, 0, 0))
+    pdf.set_font("Arial", size=14)
+    pdf.set_text_color(25, 134, 170)
+    pdf.cell(200, 10, txt="Informe de Prequalificació", ln=True, align="C")
+    pdf.ln(10)
+
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Nom del client: {nom_client}", ln=True)
+    pdf.cell(200, 10, txt=f"Capital total disponible (incloent estalvis): {capital} EUR", ln=True)
+    pdf.cell(200, 10, txt=f"Preu màxim habitatge: {preu} EUR", ln=True)
+    pdf.cell(200, 10, txt=f"Quota màxima assumible: {quota} EUR", ln=True)
+    pdf.ln(10)
 
     # Afegir gauge
     try:
-        rect_gauge = fitz.Rect(50, 300, 300, 500)
-        page.insert_image(rect_gauge, filename=gauge_img)
+        pdf.image(gauge_img, x=50, y=100, w=100)
     except:
         pass
 
     pdf_file = "informe_prequalificacio.pdf"
-    doc.save(pdf_file)
-    doc.close()
+    pdf.output(pdf_file)
     return pdf_file
 
 # Inputs
