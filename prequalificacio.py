@@ -1,8 +1,9 @@
 
 import streamlit as st
 import plotly.graph_objects as go
-from fpdf import FPDF
 import base64
+import fitz  # PyMuPDF
+import os
 
 # --- Configuración de la página ---
 st.set_page_config(page_title="Agent Prequalificador", page_icon="🏠", layout="centered")
@@ -10,51 +11,20 @@ st.set_page_config(page_title="Agent Prequalificador", page_icon="🏠", layout=
 # --- Colores corporativos ---
 CORPORATE_COLOR = "#1986aa"
 
-# --- CSS personalizado ---
-custom_css = f"""
-<style>
-    .main {{
-        background-color: #f9f9f9;
-    }}
-    .stButton>button {{
-        background-color: {CORPORATE_COLOR};
-        color: white;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 16px;
-    }}
-    .stButton>button:hover {{
-        background-color: #146b88;
-    }}
-    footer {{
-        visibility: hidden;
-    }}
-    .custom-footer {{
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: {CORPORATE_COLOR};
-        color: white;
-        text-align: center;
-        padding: 10px;
-        font-size: 14px;
-    }}
-</style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
+# --- Header con logo y título ---
+logo_path = "logo.png"
+if os.path.exists(logo_path):
+    st.markdown(f"""
+    <div style='display:flex; align-items:center; justify-content:center;'>
+        <img src='{logo_path}' style='height:60px; margin-right:15px;'>
+        <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"<h1 style='color:{CORPORATE_COLOR}; text-align:center;'>Agent Prequalificador</h1>", unsafe_allow_html=True)
+    st.warning("⚠ Logo no disponible. Puja el fitxer 'logo.png'.")
 
-# --- Header con logo a la izquierda ---
-logo_path = "logo.png"  # Asegúrate de tener este archivo en el repositorio
-header_html = f"""
-<div style='display:flex; align-items:center; justify-content:center;'>
-    <img src='{logo_path}' style='height:60px; margin-right:15px;'>
-    <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
-</div>
-"""
-st.markdown(header_html, unsafe_allow_html=True)
-
-st.write("Completa el formulari per calcular el preu màxim de l'habitatge que pots comprar.")
+st.write("Introdueix les dades del client per calcular el capital màxim d'hipoteca i el preu màxim de l'habitatge.")
 
 # --- Formulario ---
 with st.form("prequal_form"):
@@ -70,27 +40,23 @@ if submit:
     tipus_mensual = (tipus_interes / 100) / 12
     n_quotes = anys * 12
 
-    # Regla del 35% de ingresos para la cuota máxima
     quota_max = ingressos * 0.35
-
-    # Fórmula inversa para calcular el importe máximo financiable
     import_max = quota_max * (1 - (1 + tipus_mensual) ** (-n_quotes)) / tipus_mensual
-
-    # Precio máximo = importe máximo + estalvis
     preu_maxim = import_max + estalvis
 
     # --- Resultados ---
     st.subheader("Resultats")
     st.write(f"**Nom:** {nom}")
     st.write(f"**Quota màxima assumible:** {quota_max:,.2f} €")
-    st.write(f"**Import màxim a finançar:** {import_max:,.2f} €")
+    st.write(f"**Capital màxim hipoteca:** {import_max:,.2f} €")
     st.write(f"**Preu màxim habitatge:** {preu_maxim:,.2f} €")
 
-    # --- Gauge con Plotly ---
+    # --- Gauge atractivo con Plotly ---
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
+        mode="gauge+number+delta",
         value=preu_maxim,
         title={"text": "Preu màxim (€)"},
+        delta={"reference": import_max},
         gauge={
             "axis": {"range": [0, preu_maxim * 1.2]},
             "bar": {"color": CORPORATE_COLOR},
@@ -102,41 +68,36 @@ if submit:
     ))
     st.plotly_chart(fig)
 
-    # --- Generar PDF con soporte Unicode ---
-    class PDF(FPDF):
-        def header(self):
-            try:
-                self.image(logo_path, 10, 8, 33)
-            except:
-                pass
-            self.set_font("DejaVu", "", 16)
-            self.set_text_color(25, 134, 170)
-            self.cell(0, 10, "Informe Prequalificació", ln=True, align="C")
-
-        def footer(self):
-            self.set_y(-15)
-            self.set_font("DejaVu", "", 8)
-            self.cell(0, 10, "Agent Prequalificador - Contacte: info@empresa.com", align="C")
-
-    pdf = PDF()
-    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
-    pdf.set_font('DejaVu', '', 12)
-    pdf.add_page()
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, f"Nom del client: {nom}", ln=True)
-    pdf.cell(0, 10, f"Quota màxima assumible: {quota_max:,.2f} €", ln=True)
-    pdf.cell(0, 10, f"Import màxim a finançar: {import_max:,.2f} €", ln=True)
-    pdf.cell(0, 10, f"Preu màxim habitatge: {preu_maxim:,.2f} €", ln=True)
-
+    # --- Generar PDF personalizado con PyMuPDF ---
     pdf_file = "prequalificacio.pdf"
-    pdf.output(pdf_file)
+    doc = fitz.open()
+    page = doc.new_page()
 
-    # --- Botón para descargar PDF ---
+    # Título
+    page.insert_text((50, 50), "Informe Prequalificació", fontsize=20, color=(0.09, 0.52, 0.67))
+
+    # Logo si existe
+    if os.path.exists(logo_path):
+        rect = fitz.Rect(400, 20, 500, 100)
+        page.insert_image(rect, filename=logo_path)
+
+    # Datos
+    y = 120
+    page.insert_text((50, y), f"Nom del client: {nom}", fontsize=14)
+    y += 20
+    page.insert_text((50, y), f"Quota màxima assumible: {quota_max:,.2f} €", fontsize=14)
+    y += 20
+    page.insert_text((50, y), f"Capital màxim hipoteca: {import_max:,.2f} €", fontsize=14)
+    y += 20
+    page.insert_text((50, y), f"Preu màxim habitatge: {preu_maxim:,.2f} €", fontsize=14)
+
+    # Guardar PDF
+    doc.save(pdf_file)
+    doc.close()
+
+    # Botón para descargar PDF
     with open(pdf_file, "rb") as f:
         pdf_bytes = f.read()
         b64 = base64.b64encode(pdf_bytes).decode()
         href = f'<a href="data:application/octet-stream;base64,{b64}" download="prequalificacio.pdf">📥 Descarregar PDF</a>'
         st.markdown(href, unsafe_allow_html=True)
-
-# --- Footer personalizado en la app ---
-st.markdown("<div class='custom-footer'>Agent Prequalificador © 2025 | Contacte: info@empresa.com</div>", unsafe_allow_html=True)
