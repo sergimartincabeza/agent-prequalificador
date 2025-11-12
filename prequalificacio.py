@@ -65,12 +65,16 @@ if submit:
     ))
     st.plotly_chart(fig)
 
-    # --- Exportar gauge como imagen PNG ---
-    gauge_img = "gauge.png"
-    fig.write_image(gauge_img)
+    # --- Exportar gauge como imagen PNG en /tmp ---
+    gauge_img = "/tmp/gauge.png"
+    try:
+        fig.write_image(gauge_img)
+    except Exception as e:
+        st.error("No s'ha pogut generar la imatge del gauge. Comprova que 'kaleido' està instal·lat.")
+        gauge_img = None
 
-    # --- Generar PDF con PyMuPDF incluyendo el gauge ---
-    pdf_file = "prequalificacio.pdf"
+    # --- Generar PDF en /tmp ---
+    pdf_file = "/tmp/prequalificacio.pdf"
     doc = fitz.open()
     page = doc.new_page()
 
@@ -92,8 +96,8 @@ if submit:
     y += 20
     page.insert_text((50, y), f"Preu màxim habitatge: {preu_maxim:,.2f} €", fontsize=14)
 
-    # Insertar gauge en el PDF
-    if os.path.exists(gauge_img):
+    # Insertar gauge en el PDF si existe
+    if gauge_img and os.path.exists(gauge_img):
         rect_gauge = fitz.Rect(50, y + 40, 350, y + 240)
         page.insert_image(rect_gauge, filename=gauge_img)
 
