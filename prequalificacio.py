@@ -12,17 +12,20 @@ def calcula_capacitat_hipotecaria(ingressos_nets_mensuals, estalvis, deutes_mens
         import_maxim_hipoteca = quota_maxima * n_pagaments
 
     preu_maxim_habitatge = (import_maxim_hipoteca + estalvis) / 1.10
-
     return quota_maxima, import_maxim_hipoteca, preu_maxim_habitatge
 
-# Interfície Streamlit
-st.set_page_config(page_title="Prequalificació de compradors", page_icon="🏠")
-st.title("Agent de prequalificació hipotecària")
+# Configuració de la pàgina
+st.set_page_config(page_title="Prequalificació de compradors", page_icon="🏠", layout="centered")
 
-st.markdown("""
-Aquest agent et permet estimar la capacitat hipotecària d’un client comprador segons les seves dades econòmiques.
-""")
+# Mostra el logotip
+st.image("logo.png", width=150)
 
+# Títol amb color corporatiu
+st.markdown("<h1 style='color:#1986aa; font-family:Arial;'>Agent de Prequalificació Hipotecària</h1>", unsafe_allow_html=True)
+st.markdown("<p style='font-size:18px;'>Estima la capacitat hipotecària del teu client de manera ràpida i senzilla.</p>", unsafe_allow_html=True)
+
+# Formulari
+st.subheader("Introdueix les dades del client")
 ingressos = st.number_input("Ingressos nets mensuals (€)", min_value=0, value=2500)
 estalvis = st.number_input("Estalvis disponibles (€)", min_value=0, value=40000)
 deutes = st.number_input("Quotes mensuals de deutes (€)", min_value=0, value=300)
@@ -32,6 +35,12 @@ anys = st.slider("Anys de la hipoteca", min_value=5, max_value=35, value=30)
 if st.button("Calcula la capacitat hipotecària"):
     quota, hipoteca, preu = calcula_capacitat_hipotecaria(ingressos, estalvis, deutes, tipus_interes, anys)
     st.subheader("Resultats")
-    st.write(f"Quota màxima recomanada: **{quota:.2f} €**/mes")
-    st.write(f"Import màxim de la hipoteca: **{hipoteca:.2f} €**")
-    st.write(f"Preu màxim de l'habitatge assumible: **{preu:.2f} €** (incloent despeses del 10%)")
+    st.success(f"Quota màxima recomanada: **{quota:.2f} €**/mes")
+    st.info(f"Import màxim de la hipoteca: **{hipoteca:.2f} €**")
+    st.warning(f"Preu màxim de l'habitatge assumible: **{preu:.2f} €** (incloent despeses del 10%)")
+
+# Footer amb informació de contacte actualitzada
+st.markdown("""
+<hr>
+<p style='text-align:center; font-size:14px;'>© 2025 Sergi Martín | Contacte: <a href='mailto:info@sergimartinrealtor.com'>info@sergimartinrealtor.com</a></p>
+""", unsafe_allow_html=True)
