@@ -64,15 +64,10 @@ def crear_pdf(nom_client, capital, preu, quota, gauge_img, logo_img="logo.png"):
 
     # Afegir text amb sintaxi segura
     text = (
-        f"Informe de Prequalificació
-
-"
-        f"Nom del client: {nom_client}
-"
-        f"Capital total disponible (incloent estalvis): {capital} EUR
-"
-        f"Preu màxim habitatge: {preu} EUR
-"
+        f"Informe de Prequalificació\n\n"
+        f"Nom del client: {nom_client}\n"
+        f"Capital total disponible (incloent estalvis): {capital} EUR\n"
+        f"Preu màxim habitatge: {preu} EUR\n"
         f"Quota màxima assumible: {quota} EUR"
     )
     page.insert_text((50, 200), text, fontsize=14, color=(0, 0, 0))
