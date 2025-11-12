@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from fpdf import FPDF
 import base64
+import os
 
 # --- Configuración de la página ---
 st.set_page_config(page_title="Agent Prequalificador", page_icon="🏠", layout="centered")
@@ -44,14 +45,23 @@ custom_css = f"""
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# --- Header con logo a la izquierda ---
+# --- Header con control de errores para el logo ---
 logo_path = "logo.png"  # Asegúrate de tener este archivo en el repositorio
-header_html = f"""
-<div style='display:flex; align-items:center; justify-content:center;'>
-    <img src='{logo_path}' style='height:60px; margin-right:15px;'>
-    <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
-</div>
-"""
+if os.path.exists(logo_path):
+    header_html = f"""
+    <div style='display:flex; align-items:center; justify-content:center;'>
+        <img src='{logo_path}' style='height:60px; margin-right:15px;'>
+        <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
+    </div>
+    """
+else:
+    header_html = f"""
+    <div style='text-align:center;'>
+        <h1 style='color:{CORPORATE_COLOR};'>Agent Prequalificador</h1>
+        <p style='color:red;'>⚠ Logo no disponible. Puja el fitxer 'logo.png' al repositori.</p>
+    </div>
+    """
+
 st.markdown(header_html, unsafe_allow_html=True)
 
 st.write("Completa el formulari per calcular el preu màxim de l'habitatge que pots comprar.")
@@ -105,10 +115,11 @@ if submit:
     # --- Generar PDF con soporte Unicode ---
     class PDF(FPDF):
         def header(self):
-            try:
-                self.image(logo_path, 10, 8, 33)
-            except:
-                pass
+            if os.path.exists(logo_path):
+                try:
+                    self.image(logo_path, 10, 8, 33)
+                except:
+                    pass
             self.set_font("DejaVu", "", 16)
             self.set_text_color(25, 134, 170)
             self.cell(0, 10, "Informe Prequalificació", ln=True, align="C")
